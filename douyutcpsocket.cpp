@@ -56,6 +56,7 @@ void DouyuTcpSocket::loginAuth()
     outBlock.append('\0');
     tcpDanmuSoc.write(outBlock);
     outBlock.resize(0);
+    delete content_ptr;
     request_state = "loginReq";
 }
 
@@ -115,6 +116,7 @@ void DouyuTcpSocket::readDanmuMessage()
         outBlock.resize(0);
         request_state = "receiveDanmu";
         timer->start(1000*30);
+        delete content_ptr;
     }
 }
 
@@ -160,6 +162,7 @@ void DouyuTcpSocket::keepAlive()
         outBlock.append('\0');
         tcpDanmuSoc.write(outBlock);
         outBlock.resize(0);
+        delete content_ptr;
     }
     timer->start(1000*30);
 }
