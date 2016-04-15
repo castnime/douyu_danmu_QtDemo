@@ -4,7 +4,6 @@
 #include <QMainWindow>
 #include "networkaccess.h"
 #include "jsonparse.h"
-#include <vld.h>
 #include "douyutcpsocket.h"
 
 namespace Ui {

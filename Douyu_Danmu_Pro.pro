@@ -16,12 +16,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     networkaccess.cpp \
     jsonparse.cpp \
-    douyutcpsocket.cpp
+    douyutcpsocket.cpp \
+    stringgenerator.cpp
 
 HEADERS  += mainwindow.h \
     networkaccess.h \
     jsonparse.h \
     danmuconfig.h \
-    douyutcpsocket.h
+    douyutcpsocket.h \
+    stringgenerator.h
 
 FORMS    += mainwindow.ui

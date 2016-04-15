@@ -10,7 +10,6 @@ DouyuTcpSocket::DouyuTcpSocket(QObject *parent)
     :QObject(parent)
 {
 
-    this->danmu_gid = "-9999";
     this->danmu_rid = "335166";
     request_state = "";
     timer = new QTimer(this);
@@ -47,18 +46,10 @@ void DouyuTcpSocket::loginAuth()
                               <<""
                               <<"335166"
                               <<danmu_rid //房间号
-                              <<"-9999"
+                              <<_Douyu_Room_gid //分组
                 );
     QString content = STTSerialization(key_list,value_list);
-    const char *content_ptr = content.toStdString().c_str();
-    QDataStream sendOut(&outBlock,QIODevice::WriteOnly);
-    qint32 length = 4 + 4 + content.length() + 1;// 2个uint32字段长度+内容长度+'\0'
-    sendOut<<qint32(hexReverse_qint32(length))<<qint32(hexReverse_qint32(length))<<qint32(_Douyu_CTS_Num);
-    outBlock.append(content_ptr);
-    outBlock.append('\0');
-    tcpDanmuSoc.write(outBlock);
-    outBlock.resize(0);
-    delete content_ptr;
+    this->messageWrite(content);
     request_state = "loginReq";
 }
 
@@ -72,21 +63,16 @@ void DouyuTcpSocket::readDanmuMessage()
         content = inBlock.mid(pos);
         QMap<QString,QString> messageMap = STTDeserialization(content);
         //弹幕类型分析
-        if(messageMap.keys().indexOf(QString("type")) != -1 &&
-                (messageMap["type"] == QString("loginres")))
+        if(messageMap["type"] == QString("loginres"))
         {//出现表示服务端消息已经发完，可进入下一个步骤
             request_state = "joingroup";
         }
 
-        //获取聊天弹幕
-        if(messageMap.keys().indexOf(QString("type")) != -1 &&
-                (messageMap["type"] == QString("chatmsg")))
+        if(messageMap["type"] == QString("chatmsg")||
+                messageMap["type"] == QString("dgb")||
+                messageMap["type"] == QString("bc_buy_deserve"))
         {
-            QString nickname = messageMap["nn"];
-            QString level = messageMap["level"];
-            QString txt = messageMap["txt"];
-            QString message = QString("[%1] [lv.%2]:   %3").arg(nickname).arg(level).arg(txt);
-            emit chatMessageString(message);
+            emit chatMessage(messageMap);
         }
         pos = pos + content.length();
     }
@@ -101,22 +87,27 @@ void DouyuTcpSocket::readDanmuMessage()
         QStringList value_list = (QStringList()
                                   <<"joingroup" //登录请求
                                   <<danmu_rid //房间号
-                                  <<"-9999"
+                                  <<_Douyu_Room_gid //分组
                     );
-        QString content = STTSerialization(key_list,value_list);
-        const char *content_ptr = content.toStdString().c_str();
 
-        QDataStream sendOut(&outBlock,QIODevice::WriteOnly);
-        qint32 length = 4 + 4 + content.length() + 1;// 2个uint32字段长度+内容长度+'\0'
-        sendOut<<qint32(hexReverse_qint32(length))<<qint32(hexReverse_qint32(length))<<qint32(_Douyu_CTS_Num);
-        outBlock.append(content_ptr);
-        outBlock.append('\0');
-        tcpDanmuSoc.write(outBlock);
-        outBlock.resize(0);
+        QString content = STTSerialization(key_list,value_list);
+        this->messageWrite(content);
         request_state = "receiveDanmu";
-        timer->start(1000*30);
-        delete content_ptr;
+        timer->start(_Douyu_DanmuServer_Intervals);
     }
+}
+
+void DouyuTcpSocket::messageWrite(QString &content)
+{
+    const char *content_ptr = content.toStdString().c_str();
+    QDataStream sendOut(&outBlock,QIODevice::WriteOnly);
+    qint32 length = 4 + 4 + content.length() + 1;// 2个uint32字段长度+内容长度+'\0'
+    sendOut<<qint32(hexReverse_qint32(length))<<qint32(hexReverse_qint32(length))<<qint32(_Douyu_CTS_Num);
+    outBlock.append(content_ptr);
+    outBlock.append('\0');
+    tcpDanmuSoc.write(outBlock);
+    outBlock.resize(0);
+    delete content_ptr;
 }
 
 void DouyuTcpSocket::connectDanmuServer(QString &roomid)
@@ -127,8 +118,8 @@ void DouyuTcpSocket::connectDanmuServer(QString &roomid)
         tcpDanmuSoc.abort();
     }
     danmu_rid = roomid;
-    QString hostName="openbarrage.douyutv.com";
-    tcpDanmuSoc.connectToHost(hostName,8601);
+    tcpDanmuSoc.connectToHost(_Douyu_DanmuServer_HostName,
+                              _Douyu_DanmuServer_Port);
 
 }
 
@@ -156,18 +147,9 @@ void DouyuTcpSocket::keepAlive()
                                   <<tick //时间戳
                     );
         QString content = STTSerialization(key_list,value_list);
-        const char *content_ptr = content.toStdString().c_str();
-
-        QDataStream sendOut(&outBlock,QIODevice::WriteOnly);
-        qint32 length = 4 + 4 + content.length() + 1;// 2个uint32字段长度+内容长度+'\0'
-        sendOut<<qint32(hexReverse_qint32(length))<<qint32(hexReverse_qint32(length))<<qint32(_Douyu_CTS_Num);
-        outBlock.append(content_ptr);
-        outBlock.append('\0');
-        tcpDanmuSoc.write(outBlock);
-        outBlock.resize(0);
-        delete content_ptr;
+        this->messageWrite(content);
     }
-    timer->start(1000*30);
+    timer->start(_Douyu_DanmuServer_Intervals);
 }
 
 void DouyuTcpSocket::stateChanged(QAbstractSocket::SocketState state)

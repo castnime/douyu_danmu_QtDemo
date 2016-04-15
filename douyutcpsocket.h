@@ -36,8 +36,13 @@ private:
      */
     qint32 hexReverse_qint32(qint32 number);
 
+    /**
+     * @brief messageWrite
+     * 向服务器写消息
+     * @param content
+     */
+    void messageWrite(QString &content);
     QString danmu_rid; //roomid
-    QString danmu_gid; //组id gourp_id
     QString request_state;
 private slots:
     /**
