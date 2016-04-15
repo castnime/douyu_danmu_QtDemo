@@ -66,20 +66,11 @@ void DouyuTcpSocket::readDanmuMessage()
 {
     QByteArray inBlock = tcpDanmuSoc.readAll(); //接收数据块
     QString content;
-    qint32 length;
-
     int pos = 0;
-    do
+    while((pos = inBlock.indexOf(QString("type"),pos)) != -1)
     {
-        length =  (uchar)inBlock.at(0 + pos);
-        length += ((uchar)(inBlock.at(1 + pos)))<<8;
-        length += ((uchar)(inBlock.at(2 + pos)))<<16;
-        length += ((uchar)(inBlock.at(3 + pos)))<<24;
-        content = inBlock.mid(pos+12,length);
+        content = inBlock.mid(pos);
         QMap<QString,QString> messageMap = STTDeserialization(content);
-
-
-
         //弹幕类型分析
         if(messageMap.keys().indexOf(QString("type")) != -1 &&
                 (messageMap["type"] == QString("loginres")))
@@ -97,8 +88,8 @@ void DouyuTcpSocket::readDanmuMessage()
             QString message = QString("[%1] [lv.%2]:   %3").arg(nickname).arg(level).arg(txt);
             emit chatMessageString(message);
         }
-        pos = pos+length-9+13;
-    }while(pos < inBlock.length());
+        pos = pos + content.length();
+    }
 
     if(request_state == "joingroup")
     {

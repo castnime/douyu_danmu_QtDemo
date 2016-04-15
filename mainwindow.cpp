@@ -21,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent):
 
 MainWindow::~MainWindow()
 {
+    delete tcpSocket;
     delete network_access;
     delete ui;
 }
@@ -32,9 +33,18 @@ void MainWindow::start()
     rx.setMinimal(false);
     if(rx.exactMatch(roomid))
     {
-        QString url_str = QString("http://www.douyu.com/%1").arg(roomid);
-        QUrl url = QUrl(QString(url_str));
-        network_access->loadingPage(url);
+        bool ok = false;
+        roomid.toInt(&ok);
+        if(!ok)
+        {
+            QString url_str = QString("http://www.douyu.com/%1").arg(roomid);
+            QUrl url = QUrl(QString(url_str));
+            network_access->loadingPage(url);
+        }
+        else
+        {
+            tcpSocket->connectDanmuServer(roomid);
+        }
     }
     else
     {
@@ -57,13 +67,17 @@ void MainWindow::htmlContent(const QString html)
         pos += regExp.matchedLength();
     }
     JSONParse parse;
-    parse.init(json);
-    QString roomid = parse.getJsonValue(_Douyu_RoomId);
-
-
-    tcpSocket->connectDanmuServer(roomid);
-
-
+    if(parse.init(json))
+    {
+        QString roomid = parse.getJsonValue(_Douyu_RoomId);
+        tcpSocket->connectDanmuServer(roomid);
+    }
+    else
+    {
+        ui->lineEdit_roomid->setText(QString(""));
+        ui->lineEdit_roomid->setPlaceholderText("加载失败");
+        ui->plainTextEdit->setPlainText(QString(""));
+    }
 
 }
 

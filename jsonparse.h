@@ -17,7 +17,7 @@ public:
      * @brief init 初始化json语句
      * @param json
      */
-    void init(QString &json);
+    bool init(QString &json);
 
     /**
      * @brief getJsonValue 通过键值获取JsonValue

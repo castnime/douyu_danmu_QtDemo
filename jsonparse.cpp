@@ -5,7 +5,7 @@ JSONParse::JSONParse()
 
 }
 
-void JSONParse::init(QString &json)
+bool JSONParse::init(QString &json)
 {
 
     QJsonParseError error;
@@ -14,11 +14,9 @@ void JSONParse::init(QString &json)
     if(error.error == QJsonParseError::NoError)
     {//将jsonDocument转换为数组
         this->jsonDocVar = jsonDoc.toVariant();
+        return true;
     }
-    else
-    {
-        qDebug()<<"error";
-    }
+    return false;
 }
 
 QString JSONParse::getJsonValue(const QStringList &key)
