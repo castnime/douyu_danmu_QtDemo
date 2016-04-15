@@ -19,12 +19,14 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 private slots:
-    void htmlContent(const QString &html);
+    void htmlContent(const QString html);
     void showChatMessage(QMap<QString, QString>);
+    void showChatMessageString(QString message);
     void start();
 private:
     Ui::MainWindow *ui;
     NetworkAccess *network_access;
+    DouyuTcpSocket *tcpSocket;
 };
 
 #endif // MAINWINDOW_H

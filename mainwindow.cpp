@@ -11,9 +11,11 @@ MainWindow::MainWindow(QWidget *parent):
 {
     ui->setupUi(this);
     network_access = new NetworkAccess();
+    tcpSocket = new DouyuTcpSocket(this);
     connect(ui->pushButton,SIGNAL(clicked(bool)),this,SLOT(start()));
     connect(network_access,SIGNAL(pageLoadFinished(QString)),
             this,SLOT(htmlContent(QString)));
+    connect(tcpSocket,SIGNAL(chatMessageString(QString)),this,SLOT(showChatMessageString(QString)));
 
 }
 
@@ -41,7 +43,7 @@ void MainWindow::start()
 }
 
 
-void MainWindow::htmlContent(const QString &html)
+void MainWindow::htmlContent(const QString html)
 {
     //正则数据提取JSON
     QString pattern = _Douyu_Room_Pattern;
@@ -58,10 +60,9 @@ void MainWindow::htmlContent(const QString &html)
     parse.init(json);
     QString roomid = parse.getJsonValue(_Douyu_RoomId);
 
-    DouyuTcpSocket *tcpSocket = new DouyuTcpSocket(this);
+
     tcpSocket->connectDanmuServer(roomid);
 
-    connect(tcpSocket,SIGNAL(chatMessage(QMap<QString,QString>)),this,SLOT(showChatMessage(QMap<QString,QString>)));
 
 
 }
@@ -72,5 +73,11 @@ void MainWindow::showChatMessage(QMap<QString,QString> messageMap)
     QString level = messageMap["level"];
     QString txt = messageMap["txt"];
     QString message = QString("[%1] [lv.%2]:   %3").arg(nickname).arg(level).arg(txt);
+    ui->plainTextEdit->appendPlainText(message);
+}
+
+void MainWindow::showChatMessageString(QString message)
+{
+
     ui->plainTextEdit->appendPlainText(message);
 }

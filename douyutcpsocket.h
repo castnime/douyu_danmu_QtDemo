@@ -25,7 +25,7 @@ public:
 signals:
 
     void chatMessage(QMap<QString,QString>);
-
+    void chatMessageString(QString);
 
 private:
 
@@ -47,9 +47,10 @@ private slots:
     void loginAuth();
     void readDanmuMessage();
     void displayError(QAbstractSocket::SocketError error);
-    void connectDanmuServer(QString &roomid); //连接弹幕服务器信号槽
     void keepAlive();//发送心跳包
+    void stateChanged(QAbstractSocket::SocketState state);
 public:
+    void connectDanmuServer(QString &roomid); //连接弹幕服务器信号槽
     /**
      * @brief STTSerialization
      * STT序列化

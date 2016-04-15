@@ -18,6 +18,8 @@ DouyuTcpSocket::DouyuTcpSocket(QObject *parent)
     connect(&tcpDanmuSoc,SIGNAL(readyRead()),this,SLOT(readDanmuMessage()));
     connect(&tcpDanmuSoc,SIGNAL(error(QAbstractSocket::SocketError)),
             this,SLOT(displayError(QAbstractSocket::SocketError)));
+    connect(&tcpDanmuSoc,SIGNAL(stateChanged(QAbstractSocket::SocketState)),
+            this,SLOT(stateChanged(QAbstractSocket::SocketState)));
     connect(timer,SIGNAL(timeout()),this,SLOT(keepAlive()));
 
 
@@ -79,15 +81,21 @@ void DouyuTcpSocket::readDanmuMessage()
 
 
         //弹幕类型分析
-        QString key = "cur_lev"; //出现表示服务端消息已经发完，可进入下一个步骤
-        if(messageMap.keys().indexOf(key) != -1)
-        {
+        if(messageMap.keys().indexOf(QString("type")) != -1 &&
+                (messageMap["type"] == QString("loginres")))
+        {//出现表示服务端消息已经发完，可进入下一个步骤
             request_state = "joingroup";
         }
-        key = "txt";
-        if(messageMap.keys().indexOf(key) != -1)
+
+        //获取聊天弹幕
+        if(messageMap.keys().indexOf(QString("type")) != -1 &&
+                (messageMap["type"] == QString("chatmsg")))
         {
-            emit chatMessage(messageMap);
+            QString nickname = messageMap["nn"];
+            QString level = messageMap["level"];
+            QString txt = messageMap["txt"];
+            QString message = QString("[%1] [lv.%2]:   %3").arg(nickname).arg(level).arg(txt);
+            emit chatMessageString(message);
         }
         pos = pos+length-9+13;
     }while(pos < inBlock.length());
@@ -123,6 +131,10 @@ void DouyuTcpSocket::readDanmuMessage()
 void DouyuTcpSocket::connectDanmuServer(QString &roomid)
 {
 
+    if(tcpDanmuSoc.state() == QAbstractSocket::ConnectedState)
+    {
+        tcpDanmuSoc.abort();
+    }
     danmu_rid = roomid;
     QString hostName="openbarrage.douyutv.com";
     tcpDanmuSoc.connectToHost(hostName,8601);
@@ -165,6 +177,11 @@ void DouyuTcpSocket::keepAlive()
         delete content_ptr;
     }
     timer->start(1000*30);
+}
+
+void DouyuTcpSocket::stateChanged(QAbstractSocket::SocketState state)
+{
+    qDebug()<<state;
 }
 
 QString DouyuTcpSocket::STTSerialization(QStringList &key_list,QStringList &value_list)
