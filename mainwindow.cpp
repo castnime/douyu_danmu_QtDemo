@@ -3,6 +3,10 @@
 #include "stringgenerator.h"
 #include "danmuconfig.h"
 #include <QRegExp>
+#include <QPainter>
+#include <QPixmap>
+#include <QColor>
+#include <QPlainTextEdit>
 
 
 
@@ -10,7 +14,21 @@ MainWindow::MainWindow(QWidget *parent):
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+
     ui->setupUi(this);
+
+    ui->tabWidget->addTab(new QPlainTextEdit(this),QString("连接状态"));
+    ui->tabWidget->addTab(new QPlainTextEdit(this),QString("弹幕消息"));
+    ui->tabWidget->addTab(new QPlainTextEdit(this),QString("打赏"));
+
+    QPlainTextEdit *edit = static_cast<QPlainTextEdit*>(ui->tabWidget->widget(0));
+    edit->setReadOnly(true);
+    edit = static_cast<QPlainTextEdit*>(ui->tabWidget->widget(1));
+    edit->setReadOnly(true);
+    edit = static_cast<QPlainTextEdit*>(ui->tabWidget->widget(2));
+    edit->setReadOnly(true);
+    edit = NULL;
+
     network_access = new NetworkAccess();
     tcpSocket = new DouyuTcpSocket(this);
     connect(ui->pushButton,SIGNAL(clicked(bool)),this,SLOT(start()));
@@ -19,6 +37,9 @@ MainWindow::MainWindow(QWidget *parent):
     //connect(tcpSocket,SIGNAL(chatMessageString(QString)),this,SLOT(showChatMessageString(QString)));
     connect(tcpSocket,SIGNAL(chatMessage(QMap<QString,QString>)),this,SLOT(showChatMessage(QMap<QString,QString>)));
 }
+
+
+
 
 MainWindow::~MainWindow()
 {
@@ -54,6 +75,7 @@ void MainWindow::start()
 }
 
 
+
 void MainWindow::htmlContent(const QString html)
 {
     //正则数据提取JSON
@@ -77,23 +99,39 @@ void MainWindow::htmlContent(const QString html)
     {
         ui->lineEdit_roomid->setText(QString(""));
         ui->lineEdit_roomid->setPlaceholderText("加载失败");
-        ui->plainTextEdit->setPlainText(QString(""));
+        //ui->plainTextEdit->setPlainText(QString(""));
+
     }
 
 }
 
+
 void MainWindow::showChatMessage(QMap<QString,QString> messageMap)
 {
-    /*QString nickname = messageMap["nn"];
-    QString level = messageMap["level"];
-    QString txt = messageMap["txt"];
-    QString message = QString("<font style=\"color:#3B91C5;font-family:Microsoft YaHei\">%1</font> <font style=\"color:#E34945;font-family:consolas\">[lv.%2]</font><font style=\"color:#3B91C5;font-family:Microsoft YaHei\">:</font> <font style=\"color:#454545;font-family:Microsoft YaHei\">%3</font>").arg(nickname).arg(level).arg(txt);
-    */
-    ui->plainTextEdit->appendHtml(StringGenerator::getString(messageMap));
+    QPlainTextEdit *edit = NULL;
+    if(messageMap["type"] == "connectstate")
+    {//连接状态
+        edit = static_cast<QPlainTextEdit *>(ui->tabWidget->widget(0));
+    }
+    else if(messageMap["type"] == "chatmsg")
+    {//弹幕消息
+        edit = static_cast<QPlainTextEdit *>(ui->tabWidget->widget(1));
+    }
+    else if(messageMap["type"] == "dgb" || messageMap["type"] == "bc_buy_deserve")
+    {//打赏消息
+        edit = static_cast<QPlainTextEdit *>(ui->tabWidget->widget(2));
+    }
+    if(edit != NULL)
+    {
+        edit->appendHtml(StringGenerator::getString(messageMap));
+    }
+
 }
 
 void MainWindow::showChatMessageString(QString message)
 {
 
-    ui->plainTextEdit->appendPlainText(message);
 }
+
+
+

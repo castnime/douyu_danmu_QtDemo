@@ -155,6 +155,44 @@ void DouyuTcpSocket::keepAlive()
 void DouyuTcpSocket::stateChanged(QAbstractSocket::SocketState state)
 {
     qDebug()<<state;
+    QString datetime = QDateTime::currentDateTime().toString("MM-dd hh:mm:ss");
+    QString roomid = danmu_rid;
+    QString cur_state = "";
+
+    /*
+     * type = connectstate
+     * time = time
+     * state = state
+     * roomid = roomid
+     * [04-18 09:38:21] 房间号:09900 连接中...
+     */
+    if(QAbstractSocket::HostLookupState == state)
+    {
+        cur_state = "主机查询中...";
+    }
+    else if(QAbstractSocket::ConnectingState == state)
+    {
+        cur_state = "连接弹幕服务器中...";
+    }
+    else if(QAbstractSocket::ConnectedState == state)
+    {
+        cur_state = "弹幕服务器连接成功...";
+    }
+    else if(QAbstractSocket::ClosingState == state)
+    {
+        cur_state = "弹幕服务器连接关闭...";
+    }
+    else if(QAbstractSocket::UnconnectedState == state)
+    {
+        cur_state = "未连接服务器...";
+    }
+
+    QMap<QString,QString> map;
+    map.insert(QString("type"),QString("connectstate"));
+    map.insert(QString("time"),datetime);
+    map.insert(QString("state"),cur_state);
+    map.insert(QString("roomid"),roomid);
+    emit chatMessage(map);
 }
 
 QString DouyuTcpSocket::STTSerialization(QStringList &key_list,QStringList &value_list)

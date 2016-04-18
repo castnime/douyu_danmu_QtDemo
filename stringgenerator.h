@@ -11,6 +11,7 @@ class StringGenerator
 public:
     StringGenerator();
     static QString getString(QMap<QString,QString> &messageMap);
+    static QString getDashedLine();
 private:
     static QString TE(QString color, QString font_family, QString txt);
 
